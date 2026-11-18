@@ -79,6 +79,48 @@ class BrowserIntegration(unittest.TestCase):
         shot=Path(__file__).resolve().parents[1]/'docs'/'LIVE-FIXTURE-PREVIEW.png'
         p.screenshot(path=str(shot),full_page=True)
 
+    def test_ignored_inclusion_requires_preview_and_explicit_consent(self):
+        p=self.page
+        p.wait_for_function("document.querySelector('.preview-label').textContent.includes('LIVE WINDOWS')")
+        detail=p.locator('#ignoredInclusionDetails')
+        self.assertFalse(detail.is_hidden())
+        detail.locator('summary').click()
+        p.locator('#ignoredFilePaths').fill('src/a.py')
+        p.locator('#previewButton').click()
+        # Review cannot occur without clicking the separate preview control.
+        self.assertIsNone(self.b.h.ignored_preview)
+        p.locator('#ignoredPreviewButton').click()
+        p.wait_for_function("document.querySelector('#ignoredReviewResults').textContent.includes('Review digest')")
+        self.assertIsNotNone(self.b.h.ignored_preview)
+        self.assertFalse(p.locator('#ignoredConsentRow').is_hidden())
+        self.assertFalse(p.locator('#ignoredConsent').is_checked())
+        p.once('dialog',lambda d: d.dismiss())
+        p.locator('#previewButton').click()
+        self.assertIsNotNone(self.b.h.ignored_preview)  # consent missing, no run
+        self.assertEqual('idle',self.b.h.status()['status'])
+        p.locator('#ignoredConsent').check()
+        p.once('dialog',lambda d: d.accept())
+        p.locator('#previewButton').click()
+        p.wait_for_function("document.getElementById('resultBody').innerText.includes('Deep handoff created')",timeout=12000)
+        self.assertIsNone(self.b.h.ignored_preview)
+        self.assertEqual('complete',self.b.h.status()['status'])
+        self.assertEqual([],self.errors)
+
+    def test_ignored_review_invalidates_on_selection_change(self):
+        p=self.page
+        p.wait_for_function("document.querySelector('.preview-label').textContent.includes('LIVE WINDOWS')")
+        p.locator('#ignoredInclusionDetails summary').click()
+        p.locator('#ignoredFilePaths').fill('src/a.py')
+        p.locator('#ignoredPreviewButton').click()
+        p.wait_for_function("document.querySelector('#ignoredReviewResults').textContent.includes('Review digest')")
+        self.assertFalse(p.locator('#ignoredConsentRow').is_hidden())
+        p.locator('#ignoredFilePaths').fill('src/b.py')
+        self.assertTrue(p.locator('#ignoredConsentRow').is_hidden())
+        self.assertTrue(p.locator('#ignoredReviewResults').is_hidden())
+        p.locator('#projectList [data-project="Beta-App"]').click()
+        self.assertTrue(p.locator('#ignoredConsentRow').is_hidden())
+        self.assertEqual([],self.errors)
+
     def test_structure_and_theme(self):
         p=self.page
         p.wait_for_function("document.querySelector('.preview-label').textContent.includes('LIVE WINDOWS')")

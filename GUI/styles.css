@@ -37,3 +37,14 @@ html[data-theme=light] .help-tooltip{background:#1d3048;color:#fff;border-color:
 /* v1.2.1 · Keep very long sandbox paths readable without crowding navigation. */
 .workspace-mini b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
 .statusbar>span:not(.statuskeys){min-width:0;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Audit 02: explicit, opt-in private ignored-source approval (live mode only). */
+.ignored-inclusion {margin-top:14px;border:1px solid var(--border, #58616d);border-radius:10px;padding:12px;}
+.ignored-inclusion > summary {cursor:pointer;font-size:0.92rem;font-weight:600;}
+.ignored-inclusion > summary .optional {font-weight:400;margin-left:6px;}
+.ignored-inclusion-body {display:grid;gap:10px;padding-top:12px;}
+.ignored-inclusion-body .textarea {width:100%;box-sizing:border-box;}
+.ignored-review-results {border:1px solid var(--border, #58616d);border-radius:8px;padding:12px;overflow-wrap:anywhere;}
+.ignored-review-results ul {margin:6px 0 4px;padding-left:20px;}
+.ignored-review-results .digest {font-size:.78rem;overflow-wrap:anywhere;}
+.ignored-review-results .review-warning {font-size:.87rem;}

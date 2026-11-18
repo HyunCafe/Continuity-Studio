@@ -83,6 +83,17 @@
               <div class="field"><div class="label-row"><div class="help-label"><label class="field-label" for="taskNote">Current task note <span class="optional">Optional</span></label><button type="button" class="help-dot" aria-label="What should I write in the task note?" data-help="Leave a short instruction for the next AI session, such as ‘Fix the login screen, then run tests.’ Leave blank if you have no specific next task.">?</button></div><span class="field-meta" id="noteCount">0 / 240</span></div>
                 <textarea class="textarea" id="taskNote" data-help="Write one short reminder for the next AI session, such as what you were doing and what should happen next. You can leave this blank." maxlength="240" rows="3" placeholder="What should the next session work on first?"></textarea>
               </div>
+              <details id="ignoredInclusionDetails" class="ignored-inclusion" hidden>
+                <summary>Include specific Git-ignored source files <span class="optional">Advanced · requires approval</span></summary>
+                <div class="ignored-inclusion-body">
+                  <label class="field-label" for="ignoredFilePaths">Exact project-relative paths, one file per line</label>
+                  <textarea id="ignoredFilePaths" class="textarea" rows="4" maxlength="16000" autocomplete="off" spellcheck="false" placeholder="e.g. src/generated-config.py"></textarea>
+                  <p class="field-help">Only individually selected, non-private text files. Preview lists file names, not their contents; inspect each file yourself before approving. Other ignored files stay excluded.</p>
+                  <button type="button" id="ignoredPreviewButton" class="btn-secondary">Preview selected ignored files</button>
+                  <div id="ignoredReviewResults" class="ignored-review-results" role="status" aria-live="polite" hidden></div>
+                  <label id="ignoredConsentRow" class="toggle-line" hidden><input id="ignoredConsent" type="checkbox"><span class="checkbox-copy"><b>I inspected the listed files and approve their inclusion</b><small>Approval is one-time and tied to the file contents; re-preview if anything changes.</small></span></label>
+                </div>
+              </details>
             </div>
             <div id="organizationFields" class="field" hidden><label class="toggle-line"><input type="checkbox" id="sizeCheck" data-help="Adds approximate folder sizes to the map. It can take longer, but it does not move or change files."><span class="checkbox-copy" data-help="Adds approximate folder sizes so you can spot large folders. It may take longer and does not change files."><b>Include folder-size estimates</b><small>May take longer on large workspaces</small></span></label></div>
             <details id="advanced" class="advanced"><summary data-help="These less-used settings control what gets included. The defaults are suitable for most people."><span><svg><use href="#i-chevron"/></svg> Advanced options</span><small>Optional · defaults recommended</small></summary>

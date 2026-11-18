@@ -1,13 +1,23 @@
 ID,Severity,EvidenceConfidence,Reconciliation,Subject,AuditOwner,ActionStatus
 Q01-001,High,Verified,Accepted,Public/private backend separation,08,Interim tracked ignore guardrail added (offline update); owner structural/publishing decision remains open
-Q01-002,High,Verified,Accepted,Deep Handoff excludes essential ignored backend,02,Open: narrow explicit inclusion
-Q01-003,Medium,Verified mechanism; Strong inference outcome,Accepted with qualification,Potential false-safe ignored-source omission,02,Open: synthetic repro for backend+host
+Q01-002,High,Verified,Accepted,Deep Handoff excludes essential ignored backend,02,Mitigated by A02 reviewed exact-path inclusion; Windows fixture verified; the owner must still approve essential ignored source in real projects
+Q01-003,Medium,Verified mechanism; Strong inference outcome,Accepted with qualification,Potential false-safe ignored-source omission,02,Targeted false-safe omission cases corrected; 119 PowerShell assertions PASS Windows; further risk review in A06/A09
 Q01-004,Medium,Docs verified; historical execution unverified,Accepted with qualification,Windows suite provenance ledger,03/04/09,Evidence ledger created; raw Windows-suite provenance still required (Audits 03/04/09)
 Q01-005,Low,Verified,Accepted,Stale GUI demo-only header,07,Corrected stale GUI comments in offline update; no runtime logic changed
 Q01-006,Low,Verified,Accepted,Legacy default TOOL_REL overridden by private live launcher,05/08,Deferred: explicit path authority
 Q01-007,Low,Verified omission; risk policy-dependent,Accepted with qualification,Live manifest does not hash Support/host.py,05/08,Current manifest/Git trust split documented; policy decision pending (Audits 05/08)
-Q01-008,Low,Verified,Accepted,Git ignore policy falsely labelled .gitignore,02,Deferred: wording fix
+Q01-008,Low,Verified,Accepted,Git ignore policy falsely labelled .gitignore,02,Resolved in A02: Git-ignore policy diagnostic wording corrected
 Q01-009,Release gate,Verified,Intentional scope,Public clone demo only,08/09,Open: live distribution/installer
 Q01-010,Release gate,Verified,Accepted policy gate,Rights reserved; no open-source license,08,Open: explicit license choice
 Q01-011,Informational,Verified with full RAR,Expected historical receipt,Old source head in cutover manifests,None,Closed: no defect
 Q01-012,Informational,Scanner path guard verified,Downgraded,Last selection not picker-validated but downstream guarded,04 optional,Closed for Audit 01
+Q02-001,High,Verified test harness defect; Windows regression passed,Accepted and corrected,Deep suite used retired fixture layout,02,"Closed: relocated harness; 96 baseline, subsequently 119/119 Windows assertions"
+Q02-002,High,Verified mechanism; fixed with Windows tests,Accepted and corrected,Ignored source omissions could leave an erroneous safe verdict,02,Closed for covered omission classes: review/unknown on missing ignored source; synthetic fixtures passed
+Q02-003,High,Verified observed omission; reviewed-inclusion fixture verified,Accepted and mitigated,Self-handoff originally omitted private ignored implementation,02,Mitigated: digest-bound exact-path approval works end-to-end; full real-project selections remain owner responsibility
+Q02-004,Medium,Verified code path; Windows regression passed,Accepted and corrected,Clean secret-suspect tracked source omitted without readiness review,02,Closed for test-covered heuristic cases; secret detection remains imperfect
+Q02-005,Medium,Verified deliberate redaction policy; Windows regression passed,Accepted with policy qualification,Redacted instructions could retain unconditional complete verdict,02,Closed: redaction flags review; intentional sanitization preserved
+Q02-006,Medium,Verified metadata data flow; Windows regression passed,Accepted and corrected,Sensitive excluded filenames appeared in shareable metadata,02/06,Mitigated: private-name masking + synthetic tests; deeper privacy adversarial review in A06
+Q02-007,Low,Verified,Accepted and corrected,Ignore reason mislabeled .gitignore,02,Closed: Git ignore policy wording
+Q02-008,Low,Verified,Accepted and corrected,Deep README obsolete installation pointers,02,Closed: relocated paths and approval documentation updated
+Q02-009,Medium,Verified synthesis of Q02-002/004/005,Consolidated,Omission accounting disconnected from readiness verdict,02,"Consolidated into tested corrections Q02-002, Q02-004 and Q02-005; no duplicate independent defect"
+Q02-010,Low,Strong inference; no Windows defect demonstrated,Deferred,Rare LF-containing path parsing in supplemental Git metadata,06 optional,Deferred: evaluate only if relevant to cross-platform threat model or demonstrated regression

@@ -39,8 +39,43 @@ MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=ut
         '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
         '.ico': 'image/x-icon'}
 MAX_JSON = 8192
+MAX_JSON_REVIEWED_INCLUSION = 36864  # Only deep preview / capture accept path lists.
 MAX_PROJECTS = 5000
 LOG_KEEP = 30
+# Private Phase-3A engine expects exact ignored-file paths and a preview digest.
+# Keep the GUI review authorization ephemeral; the engine rechecks source bytes.
+IGNORED_PREVIEW_TTL_SECONDS = 300
+IGNORED_PREVIEW_TIMEOUT_SECONDS = 180
+IGNORED_LIST_MAX = 16000
+IGNORED_DIGEST_RE = re.compile(r'^IGNORED_APPROVAL_SHA256=([0-9a-fA-F]{64})$', re.M)
+
+
+def normalize_ignored_paths(value: str) -> tuple[str, list[str]]:
+    """Conservative transport validation; PowerShell remains final policy authority."""
+    if not isinstance(value, str) or not value.strip() or len(value) > IGNORED_LIST_MAX:
+        raise ValueError('Provide 1–100 exact ignored source paths (maximum 16000 characters).')
+    paths = []
+    seen = set()
+    for line in value.splitlines():
+        path = line.strip().replace('\\', '/')
+        if not path:
+            continue
+        parts = path.split('/')
+        if (len(path) > 1024 or path.startswith('/') or path.endswith('/')
+                or any(x in ('', '.', '..') for x in parts)
+                or any(ord(ch) < 32 or ord(ch) == 127 or ch in ':*?<>|"[]' for ch in path)):
+            raise ValueError('Ignored inclusion requires exact project-relative file paths; no links, globs or traversal.')
+        key = path.casefold()
+        if key in seen:
+            raise ValueError('Duplicate ignored source path.')
+        seen.add(key)
+        paths.append(path)
+        if len(paths) > 100:
+            raise ValueError('Maximum 100 selected ignored source files.')
+    if not paths:
+        raise ValueError('Ignored source list is empty.')
+    return '\n'.join(paths), paths
+
 
 
 def under(path: Path, root: Path) -> bool:
@@ -286,6 +321,8 @@ class AppHost:
         self.lock = threading.RLock()
         self.job: RunJob | None = None
         self.authorized_paths: set[str] = set()
+        self.ignored_preview = None  # session-local, one-use and time-limited
+        self.ignored_preview_running = False
         self.last_client = time.monotonic()
         self.log_dir = APP / 'logs'
         self.log_dir.mkdir(exist_ok=True)
@@ -380,11 +417,78 @@ class AppHost:
                 if v!=default: a.extend([sw,str(v)])
         return kind, scope, rel, a
 
+    def preview_ignored(self, request: dict):
+        """Read-only reviewed-inclusion preflight; never creates a handoff ZIP."""
+        if not isinstance(request, dict):
+            raise ValueError('Expected a preview request object.')
+        tool = self.backend()
+        project = validate_project(self.root, request.get('projectPath'))
+        text, paths = normalize_ignored_paths(request.get('pathsText'))
+        with self.lock:
+            if (self.ignored_preview_running
+                    or (self.job is not None and self.job.status == 'running')):
+                raise ValueError('An operation is already running.')
+            self.ignored_preview = None
+            self.ignored_preview_running = True
+        try:
+            spec = [*self.pwsh, '-NoLogo', '-NoProfile', '-NonInteractive',
+                    '-ExecutionPolicy', 'Bypass', '-File', str(tool / SCRIPTS['deep']),
+                    '-DevelopmentRoot', str(self.root), '-Project', project,
+                    '-Mode', 'Source', '-NonInteractive', '-NoOpen',
+                    '-IncludeIgnoredPathsText', text, '-PreviewIgnoredInclusion']
+            flags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            try:
+                cp = subprocess.run(spec, cwd=str(tool), stdin=subprocess.DEVNULL,
+                                    capture_output=True, text=True, encoding='utf-8',
+                                    errors='replace', timeout=IGNORED_PREVIEW_TIMEOUT_SECONDS,
+                                    creationflags=flags)
+            except subprocess.TimeoutExpired as exc:
+                raise ValueError('Ignored-source preview timed out; no approval issued.') from exc
+            if cp.returncode:
+                # Avoid exposing the raw request or entire backend trace as an API error.
+                diagnostic = (cp.stderr or cp.stdout or '').strip()[-350:]
+                raise ValueError('Ignored-source preview rejected the selection: ' + diagnostic)
+            found = IGNORED_DIGEST_RE.findall(cp.stdout)
+            included = [line.strip()[len('INCLUDE: '):] for line in cp.stdout.splitlines()
+                        if line.strip().startswith('INCLUDE: ')]
+            if len(found) != 1 or len(included) != len(paths):
+                raise ValueError('Backend preview response was incomplete; approval withheld.')
+            if sorted(x.casefold() for x in included) != sorted(x.casefold() for x in paths):
+                raise ValueError('Backend preview file set differs from the requested paths.')
+            digest = found[0].lower()
+            with self.lock:
+                self.ignored_preview = dict(project=project, paths_text=text, digest=digest,
+                                            expires=time.monotonic() + IGNORED_PREVIEW_TTL_SECONDS)
+            return dict(projectPath=project, paths=included, digest=digest,
+                        expiresInSeconds=IGNORED_PREVIEW_TTL_SECONDS)
+        finally:
+            with self.lock:
+                self.ignored_preview_running = False
+
     def start(self, request):
         kind,scope,project,argv = self.build(request)
+        settings = request['settings']
+        approval = settings.get('ignoredInclusion')
         with self.lock:
-            if self.job and self.job.status=='running':
+            if self.ignored_preview_running or (self.job and self.job.status=='running'):
                 raise ValueError('Another operation is running')
+            if approval is not None:
+                if kind != 'deep' or settings.get('capture', 'source') != 'source' or settings.get('honorGitIgnore', True) is not True:
+                    raise ValueError('Reviewed ignored inclusion requires Deep Source mode with Git-ignore protection on.')
+                if not isinstance(approval, dict) or set(approval) != {'pathsText', 'digest'}:
+                    raise ValueError('Invalid ignored inclusion approval payload.')
+                paths_text, _ = normalize_ignored_paths(approval['pathsText'])
+                provided_digest = approval['digest']
+                if not isinstance(provided_digest, str) or not re.fullmatch(r'[a-fA-F0-9]{64}', provided_digest):
+                    raise ValueError('Invalid ignored inclusion digest.')
+                review = self.ignored_preview
+                if (not review or time.monotonic() > review['expires']
+                        or project != review['project'] or paths_text != review['paths_text']
+                        or not hmac.compare_digest(provided_digest.lower(), review['digest'])):
+                    raise ValueError('Preview approval is missing, stale or mismatched. Preview the exact files again.')
+                argv.extend(['-IncludeIgnoredPathsText', paths_text,
+                             '-ApproveIgnoredDigest', review['digest']])
+                self.ignored_preview = None  # one use, including a failed capture
             name = re.sub(r'[^A-Za-z0-9_-]', '-', kind+'-'+(project or 'workspace'))[:60]
             file = self.log_dir / (dt.datetime.now().strftime('%Y%m%d-%H%M%S-%f')+'-'+name+'.log')
             self.job = RunJob(kind,scope,argv,self.root,file)
@@ -566,14 +670,16 @@ class Handler(BaseHTTPRequestHandler):
         if not hmac.compare_digest(auth,self.server.host_app.token):
             return self.send_json({'error':'Unauthorized'},403)
         try:
+            path=urlparse(self.path).path
             n=int(self.headers.get('Content-Length','0'))
-            if n<0 or n>MAX_JSON:
+            limit = MAX_JSON_REVIEWED_INCLUSION if path in ('/api/run','/api/deep/preview-ignored') else MAX_JSON
+            if n<0 or n>limit:
                 return self.send_json({'error':'Request too large'},413)
             val=json.loads(self.rfile.read(n).decode('utf-8'))
             if not isinstance(val,dict):
                 raise ValueError('Expected a JSON object')
-            path=urlparse(self.path).path
             if path=='/api/run':out=self.server.host_app.start(val)
+            elif path=='/api/deep/preview-ignored':out=self.server.host_app.preview_ignored(val)
             elif path=='/api/cancel':out=self.server.host_app.cancel()
             elif path=='/api/open':out=self.server.host_app.open_path(val.get('path'))
             else:return self.send_json({'error':'Unknown action'},404)

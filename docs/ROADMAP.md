@@ -2,7 +2,7 @@
 
 **Original milestone snapshot:** November 18, 2026. The repository is an early public, **demo-only** preview. Completed milestones below refer to the owner's local Windows beta unless otherwise indicated. These are historical milestone claims; their suite-level evidence is separately classified in [TEST-PROVENANCE.md](TEST-PROVENANCE.md).
 
-**Audit status (Nov 18, 2026):** Section 01 of 09 is **PASS WITH CONDITIONS** after GPT/Qwen reconciliation. Its portable ignore guardrail, GUI comment cleanup, and documented evidence register are included in this update. Section 02 (Deep Project Handoff) is **not started**. See [AUDIT-STATUS.md](AUDIT-STATUS.md) and the [findings register](AUDIT-REGISTER.csv).
+**Audit status (Nov 18, 2026):** Sections 01 and 02 of 09 are **PASS WITH CONDITIONS** after independent GPT/Qwen reconciliation and owner-run Windows verification. Audit 02 added reviewed, exact-path inclusion of selected Git-ignored text files, accurate omission/readiness warnings, and verified GUI-to-ZIP integration on a disposable fixture. Public Git remains demo-only; private `Backend/` is not published. See [AUDIT-STATUS.md](AUDIT-STATUS.md) and the [findings register](AUDIT-REGISTER.csv).
 
 ## Implemented and verified locally
 
@@ -24,8 +24,9 @@
 
 ## Functional quality improvements
 
-- [ ] A private, explicit, reviewable mechanism for including necessary Git-ignored source and README instructions in Deep Project Handoff.
-- [ ] Continue displaying useful outputs while distinguishing safe-to-resume from incomplete coverage.
+- [x] Narrow, explicitly approved exact-path inclusion of selected Git-ignored text source in Deep Project Handoff; owner-run disposable fixture GUI-to-ZIP verified. No blanket ignored-file inclusion.
+- [x] Gate material source omissions and redacted instructions for review and mask recognized private basenames in exported metadata (Audit 02 regression coverage).
+- [x] Distinguish export success from `safe_to_resume` / incomplete coverage for tested omission classes; later security audit must challenge broader edge cases.
 - [ ] Review accessibility, keyboard behavior, DPI scaling and definitive Windows icon/taskbar identity.
 
 ## Public release work

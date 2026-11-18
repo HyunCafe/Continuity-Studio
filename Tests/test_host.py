@@ -52,6 +52,16 @@ if 'New-Organization-Audit.ps1' in script:
  file.write_text('<!-- AI-Development-Continuity:organization-audit/1; generated report -->\\n- Fully enumerated: **'+ ('True' if scope=='Workspace' else 'False')+'**\\n')
  print('ORGANIZATION AUDIT MAP: '+str(file));sys.exit(0)
 if 'New-Project-Deep-Handoff.ps1' in script:
+ if '-PreviewIgnoredInclusion' in argv:
+  text=arg('-IncludeIgnoredPathsText')
+  paths=[x.strip().replace('\\\\','/') for x in text.splitlines() if x.strip()]
+  if 'force-error' in text:
+   print('Synthetic backend refused unsafe selection');sys.exit(3)
+  print('PREVIEW: %s individually selected ignored source file(s).' % len(paths))
+  for p in paths: print('  INCLUDE: '+p)
+  print('IGNORED_APPROVAL_SHA256='+'a'*64)
+  sys.exit(0)
+ if '-IncludeIgnoredPathsText' in argv and '-ApproveIgnoredDigest' not in argv:sys.exit(4)
  dest=root/'00-Shared-Guides'/'AI-Development-Continuity'/'Reports'/'Deep-Handoff'/'fixture';dest.mkdir(parents=True,exist_ok=True)
  zipname=dest/'Latest.zip';cov={'schema':'ai-project-handoff-2','safe_to_resume':arg('-Mode')=='Source','mode':arg('-Mode'),'blockers':[],'unknowns':['Contents not enumerated: .git']}
  with zipfile.ZipFile(zipname,'w') as z:z.writestr('COVERAGE.json',json.dumps(cov))
@@ -161,6 +171,112 @@ sys.exit(8)
         for limit in (0,65,'999',True):
             with self.subTest(limit=limit), self.assertRaises(ValueError):
                 self.h.build({'mode':'deep','settings':{'projectPath':'Beta-App','maxFileMB':limit}})
+
+    # Phase 3B: preview is explicit, one-use, bound to project and exact paths.
+    def test_ignored_path_validation(self):
+        valid, paths = host.normalize_ignored_paths('src/a.py\r\nsrc\\b.py')
+        self.assertEqual('src/a.py\nsrc/b.py', valid)
+        self.assertEqual(['src/a.py','src/b.py'], paths)
+        for bad in ('../bad.py','/root/file.py','a//b.py','src/*.py','C:\\secret.py',
+                    'src/.\\x.py','src/a.py\nsrc/A.PY','src/file[1].py', 'a'*1025):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                host.normalize_ignored_paths(bad)
+
+    def test_ignored_preview_http_requires_token_and_origin(self):
+        server=host.Server(self.h)
+        self.addCleanup(server.server_close)
+        thread=threading.Thread(target=server.serve_forever,daemon=True)
+        thread.start()
+        self.addCleanup(lambda:(server.shutdown(),thread.join(timeout=5)))
+        endpoint='/api/deep/preview-ignored'
+        body=json.dumps({'projectPath':'Beta-App','pathsText':'src/a.py'})
+        def call(token, origin):
+            conn=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=10)
+            headers={'Host':f'127.0.0.1:{server.server_port}', 'Content-Type':'application/json',
+                     'X-ADC-Token':token,'Origin':origin}
+            conn.request('POST',endpoint,body=body,headers=headers)
+            res=conn.getresponse(); val=json.loads(res.read()); status=res.status;conn.close()
+            return status,val
+        allowed=f'http://127.0.0.1:{server.server_port}'
+        self.assertEqual(403,call('',allowed)[0])
+        self.assertEqual(403,call(self.h.token,'http://malicious.local')[0])
+        code,val=call(self.h.token,allowed)
+        self.assertEqual(200,code)
+        self.assertEqual(['src/a.py'],val['paths'])
+        self.assertEqual('a'*64,val['digest'])
+
+    def test_ignored_preview_requires_live(self):
+        demo=host.AppHost(self.root, live=False, pwsh=[sys.executable,str(self.fake)])
+        with self.assertRaises(ValueError):
+            demo.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+
+    def test_ignored_preview_is_read_only_and_returns_digest(self):
+        got=self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py\nsrc/b.py'})
+        self.assertEqual(['src/a.py','src/b.py'],got['paths'])
+        self.assertEqual('a'*64,got['digest'])
+        self.assertEqual(300,got['expiresInSeconds'])
+        self.assertFalse((self.tool/'Reports').exists(), 'Preview cannot publish a ZIP')
+
+    def test_ignored_preview_disallows_bad_project_and_missing_paths(self):
+        for req in ({'projectPath':'Beta-App','pathsText':'../private'},
+                    {'projectPath':'Not-A-Project','pathsText':'src/a.py'},
+                    {'projectPath':'Beta-App','pathsText':''}):
+            with self.subTest(req=req),self.assertRaises(ValueError):
+                self.h.preview_ignored(req)
+
+    def test_ignored_capture_requires_issued_approval(self):
+        settings={'projectPath':'Beta-App','capture':'source',
+                  'ignoredInclusion':{'pathsText':'src/a.py','digest':'a'*64}}
+        with self.assertRaisesRegex(ValueError,'Preview approval'):
+            self.h.start({'mode':'deep','settings':settings})
+
+    def test_ignored_approval_rejects_project_and_selection_mismatch(self):
+        got=self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+        for project,text in [('01-Learning/Alpha-Service','src/a.py'),('Beta-App','src/b.py')]:
+            settings={'projectPath':project,'capture':'source',
+                      'ignoredInclusion':{'pathsText':text,'digest':got['digest']}}
+            with self.subTest(project=project,text=text),self.assertRaisesRegex(ValueError,'mismatched'):
+                self.h.start({'mode':'deep','settings':settings})
+
+    def test_ignored_approval_expires(self):
+        got=self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+        self.h.ignored_preview['expires']=time.monotonic()-1
+        with self.assertRaisesRegex(ValueError,'stale'):
+            self.h.start({'mode':'deep','settings':{'projectPath':'Beta-App','capture':'source',
+                'ignoredInclusion':{'pathsText':'src/a.py','digest':got['digest']}}})
+
+    def test_ignored_approval_is_one_use_and_uses_exact_argv(self):
+        got=self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+        request={'mode':'deep','settings':{'projectPath':'Beta-App','capture':'source',
+                 'ignoredInclusion':{'pathsText':'src/a.py','digest':got['digest']}}}
+        self.h.start(request)
+        self.assertEqual('src/a.py', self.h.job.args[self.h.job.args.index('-IncludeIgnoredPathsText')+1])
+        self.assertEqual(got['digest'], self.h.job.args[self.h.job.args.index('-ApproveIgnoredDigest')+1])
+        self.assertIsNone(self.h.ignored_preview)
+        self.assertEqual('complete',self.finish()['status'])
+        with self.assertRaisesRegex(ValueError,'Preview approval'):
+            self.h.start(request)
+
+    def test_ignored_approval_disallows_context_and_disabled_ignore(self):
+        got=self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+        for extras in ({'capture':'context'},{'honorGitIgnore':False}):
+            settings={'projectPath':'Beta-App','capture':'source',
+                      'ignoredInclusion':{'pathsText':'src/a.py','digest':got['digest']},**extras}
+            with self.subTest(extras=extras),self.assertRaisesRegex(ValueError,'requires Deep Source'):
+                self.h.start({'mode':'deep','settings':settings})
+
+    def test_ignored_approval_blocks_overlapping_work(self):
+        self.h.ignored_preview_running=True
+        with self.assertRaisesRegex(ValueError,'operation is running'):
+            self.h.start({'mode':'deep','settings':{'projectPath':'Beta-App'}})
+        with self.assertRaisesRegex(ValueError,'already running'):
+            self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+
+    def test_ordinary_deep_run_never_picks_up_stale_approval(self):
+        self.h.preview_ignored({'projectPath':'Beta-App','pathsText':'src/a.py'})
+        self.h.start({'mode':'deep','settings':{'projectPath':'Beta-App','capture':'source'}})
+        self.assertNotIn('-ApproveIgnoredDigest',self.h.job.args)
+        self.assertEqual('complete',self.finish()['status'])
 
     def test_fixture_launcher_uses_real_executable(self):
         kind,scope,rel,argv = self.h.build({'mode':'structure','settings':{'scope':'workspace'}})

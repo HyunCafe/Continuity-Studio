@@ -20,6 +20,8 @@
   });
   const $ = id => document.getElementById(id);
   const desktop = { enabled:false, ready:false, sandbox:false, token:'', root:'', cursor:0, timer:null, issue:'', heartbeat:null };
+  let ignoredReview=null;
+  let ignoredPreviewBusy=false;
 
   const state = {
     mode:'deep', theme:'dark', lastProject:'beta', busy:false, runId:0,
@@ -50,9 +52,49 @@
     $('projectList').innerHTML = filtered.map(p => `<button class="project-row" type="button" data-project="${esc(p.id)}" data-help="${esc('Choose '+p.name+' for this task. Selecting it does not start anything or change files.')}" aria-pressed="${p.id === current().project}">${icon('folder')}<span><b>${esc(p.name)}</b><small>${esc(p.path)}</small></span><span class="selected-indicator">${icon('check')}</span></button>`).join('') || '<div class="empty-projects">No projects match that search.</div>';
     $('selectedProjectText').textContent = selectedProject() ? `Selected: ${selectedProject().name} · ${selectedProject().path}` : 'Select a project to continue.';
     $('projectList').querySelectorAll('[data-project]').forEach(btn => btn.addEventListener('click', () => {
+      if(current().project !== btn.dataset.project) invalidateIgnoredReview();
       current().project = btn.dataset.project;
       updateProjectList();
     }));
+  }
+  function invalidateIgnoredReview(){
+    ignoredReview=null;
+    const consent=$('ignoredConsent');if(consent)consent.checked=false;
+    const section=$('ignoredReviewResults');if(section){section.hidden=true;section.textContent='';}
+    const row=$('ignoredConsentRow');if(row)row.hidden=true;
+  }
+  function updateIgnoredInclusionUi(){
+    const details=$('ignoredInclusionDetails'), btn=$('ignoredPreviewButton');
+    if(!details||!btn)return;
+    const allowed=desktop.enabled&&desktop.ready&&state.mode==='deep'&&
+      state.settings.deep.capture==='source'&&state.settings.deep.honorGitIgnore===true;
+    details.hidden=!allowed;
+    btn.disabled=!allowed||state.busy||ignoredPreviewBusy;
+    btn.textContent=ignoredPreviewBusy?'Checking selected files…':'Preview selected ignored files';
+    $('ignoredFilePaths').disabled=state.busy||ignoredPreviewBusy;
+    $('ignoredConsent').disabled=state.busy||ignoredPreviewBusy;
+  }
+  async function previewIgnoredSource(){
+    if(!desktop.enabled||!desktop.ready||state.busy||ignoredPreviewBusy||state.mode!=='deep')return;
+    const p=selectedProject(),pathsText=$('ignoredFilePaths').value;
+    if(!p){announce('Select a project first.');return;}
+    invalidateIgnoredReview();ignoredPreviewBusy=true;updateIgnoredInclusionUi();
+    const results=$('ignoredReviewResults');results.hidden=false;
+    results.textContent='Checking selected file paths and hashes without publishing a ZIP…';
+    try{
+      const review=await api('/api/deep/preview-ignored',{projectPath:p.path,pathsText});
+      if(state.mode!=='deep'||selectedProject()?.path!==review.projectPath||$('ignoredFilePaths').value!==pathsText){
+        results.textContent='Project or selection changed during preview. Preview again.';return;
+      }
+      ignoredReview={projectPath:review.projectPath,pathsText,digest:review.digest,files:review.paths,
+                     expiration:Date.now()+review.expiresInSeconds*1000};
+      results.innerHTML='<b>Files eligible for reviewed inclusion</b><ul>'+review.paths.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
+        '<p class="review-warning">This preview does not display file contents. Inspect each selected file yourself before approval. Suspected secrets may escape heuristic detection. Review the final ZIP before sharing.</p>'+
+        '<div class="digest">Review digest: <code>'+esc(review.digest)+'</code></div>';
+      $('ignoredConsentRow').hidden=false;
+      announce('Ignored file preview complete. Review the file contents before authorizing capture.');
+    }catch(e){results.textContent='Preview failed: '+e.message;announce('Ignored-source preview failed: '+e.message);}
+    finally{ignoredPreviewBusy=false;updateIgnoredInclusionUi();}
   }
   function updateAdvanced(){
     const m=state.mode, s=current();
@@ -62,7 +104,7 @@
     }else if(m === 'deep'){
       $('advancedContent').innerHTML = `<label class="toggle-line" data-help="A .gitignore file lists things the project normally leaves out. Keeping this on helps avoid packing unnecessary or possibly private files; still review ZIPs before sharing."><input type="checkbox" data-setting="honorGitIgnore" ${s.honorGitIgnore?'checked':''}><span class="checkbox-copy"><b>Honor .gitignore</b><small>Recommended privacy-aware behavior</small></span></label><label class="toggle-line" data-help="Includes unfinished changes that have not yet been saved as a Git checkpoint. Helpful for continuing work in a new AI session."><input type="checkbox" data-setting="includeDiffs" ${s.includeDiffs?'checked':''}><span class="checkbox-copy"><b>Include Git diffs</b><small>Preserve uncommitted work in progress</small></span></label><div class="mini-grid"><label class="small-input" data-help="Limits the size of each file copied into the ZIP. Larger files may be skipped. MiB is similar to a megabyte.">Maximum file size (MiB)<input type="number" data-number="maxFileMB" value="${s.maxFileMB}" min="1" max="64" step="1"></label><label class="small-input" data-help="The most space the finished ZIP should use. A smaller limit is easier to share, but it may leave out files. MiB is similar to a megabyte.">Package budget (MiB)<input type="number" data-number="maxPackageMB" value="${s.maxPackageMB}" min="10" max="2048" step="1"></label></div>`;
     }else $('advancedContent').innerHTML='';
-    $('advancedContent').querySelectorAll('[data-setting]').forEach(el => el.addEventListener('change', () => { s[el.dataset.setting] = el.checked; }));
+    $('advancedContent').querySelectorAll('[data-setting]').forEach(el => el.addEventListener('change', () => { if(el.dataset.setting==='honorGitIgnore')invalidateIgnoredReview();s[el.dataset.setting] = el.checked;updateIgnoredInclusionUi(); }));
     $('advancedContent').querySelectorAll('[data-number]').forEach(el => el.addEventListener('change', () => {
       const min=Number(el.min),max=Number(el.max),v=Number(el.value);
       s[el.dataset.number]=Number.isFinite(v) && v>=min && v<=max ? Math.round(v) : (el.dataset.number==='maxFileMB'?8:150);
@@ -89,6 +131,7 @@
       $('captureHelp').textContent=s.capture==='source'?'Includes source, relevant documentation and Git context.':'Omits implementation source; unsuitable as a complete coding handoff.';
     }
     if(m==='organization') $('sizeCheck').checked=s.sizes;
+    updateIgnoredInclusionUi();
     $('previewButton').querySelector('span').textContent=desktop.enabled?({structure:'Generate structure map',organization:'Generate organization map',deep:'Create deep handoff'}[m]):config.button;
     const last=projects.find(p=>p.id===state.lastProject);
     $('recentProject').hidden=!last;
@@ -145,6 +188,7 @@
     $('resetButton').disabled=state.busy;
     $('outcomeChoice').disabled=state.busy;
     document.querySelectorAll('.nav-item').forEach(b=>b.disabled=state.busy);
+    updateIgnoredInclusionUi();
     if(!state.busy) $('previewButton').disabled=(desktop.enabled&&!desktop.ready)||(needsProject()&&!selectedProject());
   }
   function clearResult(){if(state.busy)return;state.results[state.mode]=null;updateResult();}
@@ -155,6 +199,7 @@
     if(m==='structure') s.structure={scope:'workspace',project:s.structure.project,directoriesOnly:false,noGit:false};
     if(m==='organization') s.organization={scope:'workspace',project:s.organization.project,sizes:false};
     if(m==='deep') s.deep={project:s.deep.project,capture:'source',note:'',honorGitIgnore:true,includeDiffs:true,maxFileMB:8,maxPackageMB:150};
+    if(m==='deep'){invalidateIgnoredReview();$('ignoredFilePaths').value='';}
     renderMode();
   }
   function preview(){
@@ -279,9 +324,25 @@
     }
   }
   async function startLive(){
-    if(state.busy||!desktop.ready)return;
+    if(state.busy||ignoredPreviewBusy||!desktop.ready)return;
     const project=selectedProject();if(needsProject()&&!project)return;
     const m=state.mode,s={...current(),projectPath:needsProject()?project.path:''};
+    if(m==='deep'&&$('ignoredFilePaths').value.trim()){
+      const r=ignoredReview;
+      if(!r||r.projectPath!==project.path||r.pathsText!==$('ignoredFilePaths').value||Date.now()>r.expiration){
+        alert('Preview the exact ignored-file selection before generating a handoff.');return;
+      }
+      if(!$('ignoredConsent').checked){
+        alert('Inspect each listed file, then check the approval box before including ignored source.');return;
+      }
+      if(s.capture!=='source'||s.honorGitIgnore!==true){
+        alert('Reviewed ignored inclusion requires Source mode and Git-ignore protection.');return;
+      }
+      const confirmation='Include these '+r.files.length+' explicitly reviewed Git-ignored file(s) in this handoff?\n\n'+r.files.join('\n')+'\n\nOther ignored files stay excluded. Review the ZIP before sharing.';
+      if(!confirm(confirmation))return;
+      s.ignoredInclusion={pathsText:r.pathsText,digest:r.digest};
+      invalidateIgnoredReview(); // One-use UI approval; backend also consumes it.
+    }
     const target=project&&needsProject()?project.name:'Entire workspace';
     const result={mode:m,status:'running',title:'Starting backend…',detail:'Launching PowerShell.',target,
                   artifacts:[],warnings:[],events:[],log:'',detailsOpen:false};
@@ -414,10 +475,12 @@
     setupHelp();
     document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>switchMode(b.dataset.mode)));
     document.querySelectorAll('[data-scope]').forEach(b=>b.addEventListener('click',()=>{if(state.busy)return;current().scope=b.dataset.scope;renderMode();}));
-    document.querySelectorAll('[data-capture]').forEach(b=>b.addEventListener('click',()=>{if(state.busy)return;state.settings.deep.capture=b.dataset.capture;renderMode();}));
+    document.querySelectorAll('[data-capture]').forEach(b=>b.addEventListener('click',()=>{if(state.busy)return;if(state.settings.deep.capture!==b.dataset.capture)invalidateIgnoredReview();state.settings.deep.capture=b.dataset.capture;renderMode();}));
     $('recentProject').addEventListener('click',()=>{current().project=state.lastProject;$('projectSearch').value='';updateProjectList();});
     $('projectSearch').addEventListener('input',updateProjectList);
     $('taskNote').addEventListener('input',()=>{state.settings.deep.note=$('taskNote').value;$('noteCount').textContent=$('taskNote').value.length+' / 240';});
+    $('ignoredFilePaths').addEventListener('input',invalidateIgnoredReview);
+    $('ignoredPreviewButton').addEventListener('click',previewIgnoredSource);
     $('sizeCheck').addEventListener('change',()=>{state.settings.organization.sizes=$('sizeCheck').checked;});
     $('resetButton').addEventListener('click',resetSettings);
     $('resetResult').addEventListener('click',clearResult);
