@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#19405F"/><stop offset="0.52" stop-color="#102C48"/><stop offset="1" stop-color="#09182F"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#469CB8" stop-opacity="0.8"/><stop offset="1" stop-color="#3A7AB3" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#78ECF2"/><stop offset="0.54" stop-color="#48D5E8"/><stop offset="1" stop-color="#41B4E5"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".52" cy=".37" r=".76"><stop offset="0" stop-color="#2D7892" stop-opacity=".24"/><stop offset="1" stop-color="#17304B" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#bg)"/>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#glow)"/>
+  <rect x="10" y="10" width="236" height="236" rx="50" fill="none" stroke="url(#edge)" stroke-width="3"/>
+  <g fill="none" stroke="url(#mark)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 49 206 93 128 137 50 93Z"/>
+    <path d="m50 139 78 44 78-44"/>
+    <path d="m50 180 78 44 78-44"/>
+  </g>
+</svg>

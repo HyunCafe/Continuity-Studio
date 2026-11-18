@@ -1,0 +1,32 @@
+# Personal output, logs and generated state
+logs/
+**/last-project.json
+**/Runs/
+**/Reports/
+**/Backups/
+*.log
+*.tmp
+*.bak
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.env
+.env.*
+*.local.json
+# Local-generated development handoffs are never source artifacts
+DEVELOPMENT-MAP.md
+DEVELOPMENT-TREE.txt
+DEVELOPMENT-ORGANIZATION-MAP.md
+DEVELOPMENT-HANDOFF.zip
+PROJECT-*-HANDOFF.zip
+Latest.zip
+Previous.zip
+*.pfx
+*.p12
+*.pem
+*.key
+# No local Git fixtures or sandbox runtime archives
+Safety-Test/Runs/
+Safety-Test/rc9-runtime.zip

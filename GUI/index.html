@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continuity Studio · UI Concept</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="sprite">
+ <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2-9 5 9 5 9-5-9-5ZM3 12l9 5 9-5M3 17l9 5 9-5"/></symbol>
+ <symbol id="i-map" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11"/></symbol>
+ <symbol id="i-tree" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="7" height="5" rx="1"/><rect x="15" y="17" width="7" height="5" rx="1"/><path d="M12 7v5M5.5 17v-5h13v5"/></symbol>
+ <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2 21 7v10l-9 5-9-5V7l9-5ZM3 7l9 5 9-5M12 12v10"/></symbol>
+ <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6h7l2 2h9v11H3V6Z"/></symbol>
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+ <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 22 21H2L12 3Z"/><path d="M12 9v5M12 18h.01"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></symbol>
+ <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+ <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></symbol>
+ <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.5 1.5m11.2 11.2 1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></symbol>
+ <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+ <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.8 6.2M20 4v7h-7"/></symbol>
+ <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+ <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+ <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+</svg>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Application navigation">
+    <div class="identity">
+      <div class="brand-mark"><svg><use href="#i-layers"/></svg></div>
+      <div><div class="brand-name">Continuity <span>Studio</span></div><div class="brand-sub">AI Development Continuity</div></div>
+    </div>
+    <div class="sidebar-section-label">WORKFLOWS</div>
+    <nav class="nav" id="nav" aria-label="Workflows">
+      <button class="nav-item" data-mode="structure" data-help="Makes a simple guide to your folders and projects. Useful when starting a new AI chat without sending the actual code." aria-current="false"><svg><use href="#i-map"/></svg><span><b>Structure Map</b><small>Workspace or project overview</small></span><kbd>1</kbd></button>
+      <button class="nav-item" data-mode="organization" data-help="Shows your folders as an easy-to-read tree and hides repetitive technical folders. It does not move or delete anything." aria-current="false"><svg><use href="#i-tree"/></svg><span><b>Organization Audit</b><small>Readable directory hierarchy</small></span><kbd>2</kbd></button>
+      <button class="nav-item" data-mode="deep" data-help="Puts one project’s code, documents and recent changes into a ZIP that another AI session can use to continue working." aria-current="page"><svg><use href="#i-box"/></svg><span><b>Deep Project Handoff</b><small>Source, docs and Git context</small></span><kbd>3</kbd></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="workspace-mini"><svg><use href="#i-folder"/></svg><span><small>SAMPLE WORKSPACE</small><b>Development / 6 projects</b></span></div>
+      <p>UI study only. No local files are read or changed.</p>
+    </div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="breadcrumbs"><span>Development</span><svg><use href="#i-chevron"/></svg><strong id="breadcrumbMode">Deep Project Handoff</strong></div>
+      <div class="top-actions"><span class="preview-label"><span class="preview-dot"></span> UI PREVIEW</span><button class="theme-btn" id="themeButton" title="Switch color theme" data-help="Change between dark and light colors. This changes only the appearance, not your files." aria-label="Switch to light mode"><svg><use href="#i-sun"/></svg><span>Light mode</span></button></div>
+    </header>
+    <main class="main" id="main">
+      <div class="intro">
+        <div class="kicker"><span class="kicker-line"></span> <span id="workflowKicker">PREPARE A HANDOFF</span></div>
+        <div class="intro-main"><div><h1 id="pageTitle">Deep Project Handoff</h1><p id="pageDescription">Package a project's source, documentation and working context for another AI session.</p></div><div class="intro-aside"><span class="chip" id="scopeChip" data-help="Shows whether this action covers everything or just one selected project.">Project-specific</span><span class="chip" data-help="The initial settings are selected to be useful for most people. You can change them if needed."><svg><use href="#i-check"/></svg> Safe defaults</span></div></div>
+      </div>
+      <div class="content-grid">
+        <section class="panel controls" aria-label="Configure preview">
+          <div class="panel-heading"><div class="heading-icon"><svg><use href="#i-list"/></svg></div><div><h2>Configure capture</h2><p>Only the settings relevant to this workflow</p></div></div>
+          <div class="control-body">
+            <div id="scopeField" class="field" hidden>
+              <div class="help-label"><span class="field-label">Scope</span><button type="button" class="help-dot" aria-label="What does scope mean?" data-help="Choose all folders in your Development workspace, or focus on one project folder.">?</button></div>
+              <div class="segments" aria-label="Capture scope" role="group">
+                <button data-scope="workspace" data-help="Looks at the whole Development workspace, including its projects and folders." aria-pressed="true"><b>Entire workspace</b><small>All projects</small></button>
+                <button data-scope="project" data-help="Looks at just one project that you choose from the list." aria-pressed="false"><b>Selected project</b><small>One folder</small></button>
+              </div>
+            </div>
+            <div id="projectField" class="field">
+              <div class="label-row"><div class="help-label"><label class="field-label" for="projectSearch">Project</label><button type="button" class="help-dot" aria-label="What is a project?" data-help="A project is a folder containing work you want to review or share with another AI session.">?</button></div><span class="field-meta" id="projectCount">6 sample projects</span></div>
+              <div class="search-field"><svg><use href="#i-search"/></svg><input id="projectSearch" data-help="Type a few letters of a project name or folder path, then choose a match below." type="search" placeholder="Search name or folder path" autocomplete="off" spellcheck="false"><kbd>Ctrl+F</kbd></div>
+              <button class="last-project" id="recentProject" data-help="Select the project you worked with most recently without searching for it again."><svg><use href="#i-refresh"/></svg><span>Use last: Beta-App</span></button>
+              <div class="project-list" id="projectList" aria-label="Sample project selection"></div>
+              <p class="field-help" id="selectedProjectText"></p>
+            </div>
+            <div id="deepFields">
+              <div class="field"><div class="help-label"><span class="field-label">Package contents</span><button type="button" class="help-dot" aria-label="What are package contents?" data-help="Choose what information the ZIP will include for the next AI session.">?</button></div>
+                <div class="segments" role="group" aria-label="Deep handoff mode">
+                  <button data-capture="source" data-help="Includes actual program files, helpful documents and available change history. Choose this when another AI will keep working on the code." aria-pressed="true"><b>Source + context</b><small>Recommended</small></button>
+                  <button data-capture="context" data-help="Includes an overview and documents, but not the program code. Good for understanding the project, not for continuing code edits." aria-pressed="false"><b>Context only</b><small>No source files</small></button>
+                </div><p class="field-help" id="captureHelp">Includes source, relevant documentation and Git context.</p>
+              </div>
+              <div class="field"><div class="label-row"><div class="help-label"><label class="field-label" for="taskNote">Current task note <span class="optional">Optional</span></label><button type="button" class="help-dot" aria-label="What should I write in the task note?" data-help="Leave a short instruction for the next AI session, such as ‘Fix the login screen, then run tests.’ Leave blank if you have no specific next task.">?</button></div><span class="field-meta" id="noteCount">0 / 240</span></div>
+                <textarea class="textarea" id="taskNote" data-help="Write one short reminder for the next AI session, such as what you were doing and what should happen next. You can leave this blank." maxlength="240" rows="3" placeholder="What should the next session work on first?"></textarea>
+              </div>
+            </div>
+            <div id="organizationFields" class="field" hidden><label class="toggle-line"><input type="checkbox" id="sizeCheck" data-help="Adds approximate folder sizes to the map. It can take longer, but it does not move or change files."><span class="checkbox-copy" data-help="Adds approximate folder sizes so you can spot large folders. It may take longer and does not change files."><b>Include folder-size estimates</b><small>May take longer on large workspaces</small></span></label></div>
+            <details id="advanced" class="advanced"><summary data-help="These less-used settings control what gets included. The defaults are suitable for most people."><span><svg><use href="#i-chevron"/></svg> Advanced options</span><small>Optional · defaults recommended</small></summary>
+              <div class="advanced-body" id="advancedContent"></div>
+            </details>
+          </div>
+          <div class="panel-footer">
+            <p><svg><use href="#i-info"/></svg> Visual simulation only — nothing is generated.</p>
+            <div class="run-actions"><button type="button" class="btn-secondary" id="resetButton" data-help="Put the settings for this workflow back to their recommended defaults." >Reset options</button><button type="button" class="btn-primary" id="previewButton" data-help="In preview mode, shows an example result without creating files. In live mode, runs the selected operation and saves the real output."><svg><use href="#i-play"/></svg><span>Preview handoff</span></button><button type="button" class="btn-cancel" id="cancelButton" data-help="Stop the current preview. When using live PowerShell, stopping in the middle may leave temporary files." hidden>Cancel preview</button></div>
+          </div>
+        </section>
+        <section class="panel results" aria-label="Preview status and output">
+          <div class="panel-heading result-header"><div class="heading-icon"><svg><use href="#i-box"/></svg></div><div><h2>Result preview</h2><button type="button" class="help-dot result-help" aria-label="Understanding the result" data-help="A finished run is not always a complete handoff. ‘Needs review’ means something may be missing, and ‘Coverage unknown’ means the app could not confirm what was included.">?</button><p>How the application would report its outcome</p></div><button class="small-action" id="resetResult" data-help="Clear the result shown here. It does not delete any saved files." title="Clear sample result">Clear</button></div>
+          <div class="result-body" id="resultBody" aria-live="off"></div>
+          <div class="result-tools"><div><label for="outcomeChoice">Sample outcome</label><select id="outcomeChoice" data-help="Needs review: the example finishes, but some information may be missing."><option value="complete" title="All expected information is included">Complete</option><option value="incomplete" title="Some information may be missing" selected>Needs review</option><option value="unknown" title="Cannot confirm what was included">Coverage unknown</option><option value="failed" title="The example stops with an error">Failure</option></select></div><p id="sampleOutcomeHelp">Needs review: the example finishes, but some information may be missing.</p></div>
+        </section>
+      </div>
+      <div class="bottom-note"><svg><use href="#i-info"/></svg><span>Design-only comparison. Actual execution, coverage verification and files are intentionally not connected yet.</span></div>
+    </main>
+    <footer class="statusbar"><div><span class="status-dot"></span> UI CONCEPT · OFFLINE</div><span>6 fictional projects · No backend connection</span><span class="statuskeys">Ctrl+1/2/3 switch · Ctrl+Enter preview</span></footer>
+  </div>
+</div>
+<div id="helpTooltip" class="help-tooltip" role="tooltip" hidden></div>
+<div id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<script src="app.js" defer></script>
+</body>
+</html>
