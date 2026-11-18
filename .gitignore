@@ -1,3 +1,8 @@
+# Local/private operational backend — portable accidental-staging guardrail.
+# This is NOT a confidentiality boundary: git add -f bypasses ignore rules.
+# Do not publish or redistribute Backend/ without explicit review (Audit 08).
+/Backend/
+
 # Personal output, logs and generated state
 logs/
 **/last-project.json

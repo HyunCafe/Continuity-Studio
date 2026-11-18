@@ -1,6 +1,8 @@
-/* AI Development Continuity — visual UX prototype.
-   No backend adapter, PowerShell invocation, filesystem APIs, or network requests.
-   All projects and run results are fictional and marked as such. */
+/* Continuity Studio — dual-mode interface.
+   Public preview: fictional projects and results, no live PowerShell execution.
+   Owner's local Windows beta: an authenticated loopback host can activate the
+   separately installed private backend through the guarded live launcher.
+   Backend availability is established at runtime, not by this file alone. */
 (() => {
   'use strict';
   let projects = Object.freeze([
@@ -449,7 +451,7 @@
     if(location.protocol==='http:' && location.hostname==='127.0.0.1') initializeDesktop();
   }
   document.addEventListener('DOMContentLoaded',init);
-  // Only expose read-only inspection/test methods. Nothing connects to an engine.
+  // Read-only test introspection; the private live bridge may connect an engine.
   window.ADC_UX_TEST = Object.freeze({
     mode:()=>state.mode, theme:()=>state.theme, projectCount:()=>projects.length,
     selectedProject:()=>selectedProject()?.name, busy:()=>state.busy,

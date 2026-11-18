@@ -1,0 +1,13 @@
+ID,Severity,EvidenceConfidence,Reconciliation,Subject,AuditOwner,ActionStatus
+Q01-001,High,Verified,Accepted,Public/private backend separation,08,Interim tracked ignore guardrail added (offline update); owner structural/publishing decision remains open
+Q01-002,High,Verified,Accepted,Deep Handoff excludes essential ignored backend,02,Open: narrow explicit inclusion
+Q01-003,Medium,Verified mechanism; Strong inference outcome,Accepted with qualification,Potential false-safe ignored-source omission,02,Open: synthetic repro for backend+host
+Q01-004,Medium,Docs verified; historical execution unverified,Accepted with qualification,Windows suite provenance ledger,03/04/09,Evidence ledger created; raw Windows-suite provenance still required (Audits 03/04/09)
+Q01-005,Low,Verified,Accepted,Stale GUI demo-only header,07,Corrected stale GUI comments in offline update; no runtime logic changed
+Q01-006,Low,Verified,Accepted,Legacy default TOOL_REL overridden by private live launcher,05/08,Deferred: explicit path authority
+Q01-007,Low,Verified omission; risk policy-dependent,Accepted with qualification,Live manifest does not hash Support/host.py,05/08,Current manifest/Git trust split documented; policy decision pending (Audits 05/08)
+Q01-008,Low,Verified,Accepted,Git ignore policy falsely labelled .gitignore,02,Deferred: wording fix
+Q01-009,Release gate,Verified,Intentional scope,Public clone demo only,08/09,Open: live distribution/installer
+Q01-010,Release gate,Verified,Accepted policy gate,Rights reserved; no open-source license,08,Open: explicit license choice
+Q01-011,Informational,Verified with full RAR,Expected historical receipt,Old source head in cutover manifests,None,Closed: no defect
+Q01-012,Informational,Scanner path guard verified,Downgraded,Last selection not picker-validated but downstream guarded,04 optional,Closed for Audit 01

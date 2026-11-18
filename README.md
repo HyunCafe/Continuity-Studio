@@ -77,7 +77,9 @@ The Structure Map and Organization Audit produce their established Development-r
 
 Planned improvement: a reviewed, private option to include essential Git-ignored project source without indiscriminately adding logs, caches, backup archives, or credentials.
 
-See [architecture](docs/ARCHITECTURE.md) and [roadmap](docs/ROADMAP.md) for the implementation boundaries and next steps.
+**Audit status:** Audit 01 (architecture and baseline integrity) was independently reconciled as **PASS WITH CONDITIONS**. It is not a general security certification or production release. The audit's source/publication boundary findings remain open for later sections. A tracked `/Backend/` ignore rule now reduces accidental staging, but Git ignore rules are not a confidentiality or distribution control.
+
+See [audit status](docs/AUDIT-STATUS.md), [findings register](docs/AUDIT-REGISTER.csv), [test provenance](docs/TEST-PROVENANCE.md), [architecture](docs/ARCHITECTURE.md), and [roadmap](docs/ROADMAP.md) for the implementation boundaries, evidence and next steps.
 
 ## License and sharing
 
